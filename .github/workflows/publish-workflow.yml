@@ -15,9 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
@@ -46,6 +47,16 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ✅ This step fixes the UNAUTHORIZED pull error at revision provisioning time
+      - name: Configure Container App registry access (ACR admin)
+        run: |
+          az containerapp registry set \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --server "${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io" \
+            --username "${{ secrets.AZURE_USERNAME }}" \
+            --password "${{ secrets.AZURE_PASSWORD }}"
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
